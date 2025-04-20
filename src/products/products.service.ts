@@ -1,44 +1,44 @@
-// Сервис отвечает за логику работы с продуктами (CRUD).
-import { Injectable, NotFoundException } from '@nestjs/common'; // Импортируем декоратор Injectable
-import { InjectRepository } from '@nestjs/typeorm'; // Импортируем декоратор для репозитория
-import { Repository } from 'typeorm'; // Импортируем тип Repository
-import { Product } from './product.entity'; // Импортируем обновленную сущность Product
+// Файл: src/products/products.service.ts
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Product } from './product.entity';
+import { CreateProductDto, UpdateProductDto } from './products.dto';
 
-@Injectable() // Указываем, что это сервис
+@Injectable()
 export class ProductsService {
   constructor(
-    @InjectRepository(Product) // Внедряем репозиторий для Product
+    @InjectRepository(Product)
     private productRepository: Repository<Product>,
   ) {}
 
-  findAll(): Promise<Product[]> {
-    // Метод для получения всех продуктов
-    return this.productRepository.find(); // Возвращаем все записи из таблицы
+  async findAll(): Promise<Product[]> {
+    return this.productRepository.find();
   }
-  async findOne(longId: number): Promise<Product> {
-    // Изменяем на Promise<Product>
-    const product = await this.productRepository.findOneBy({ longId }); // Ищем продукт
+
+  async findOne(longId: number): Promise<Product | null> {
+    return this.productRepository.findOneBy({ longId });
+  }
+
+  async create(createProductDto: CreateProductDto): Promise<Product> {
+    const product = this.productRepository.create(createProductDto);
+    return this.productRepository.save(product);
+  }
+
+  async update(
+    longId: number,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Product | null> {
+    const product = await this.findOne(longId);
     if (!product) {
-      // Проверяем, существует ли продукт
-      throw new NotFoundException(`Product with longId ${longId} not found`); // Бросаем ошибку
+      return null;
     }
-    return product; // Возвращаем продукт
+    Object.assign(product, updateProductDto);
+    return this.productRepository.save(product);
   }
 
-  create(product: Partial<Product>): Promise<Product> {
-    // Метод для создания продукта
-    const newProduct = this.productRepository.create(product); // Создаем новую запись
-    return this.productRepository.save(newProduct); // Сохраняем в БД
-  }
-
-  async update(longId: number, product: Partial<Product>): Promise<Product> {
-    // Метод для обновления продукта
-    await this.productRepository.update({ longId }, product); // Обновляем запись по longId
-    return this.findOne(longId); // Возвращаем обновленный продукт
-  }
-
-  async remove(longId: number): Promise<void> {
-    // Метод для удаления продукта
-    await this.productRepository.delete({ longId }); // Удаляем запись по longId
+  async remove(longId: number): Promise<boolean> {
+    const result = await this.productRepository.delete({ longId });
+    return !!result.affected;
   }
 }

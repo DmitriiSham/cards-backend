@@ -36,21 +36,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       secretOrKey, // Используем проверенную строку
     });
   }
-
-  async validate(payload: JwtPayload) {
-    // Типизируем payload
-    // Проверяем наличие всех полей
+  validate(payload: JwtPayload) {
     if (!payload.sub || !payload.email || !payload.role) {
       throw new UnauthorizedException('Неверный формат токена');
     }
-
-    // Проверяем существование пользователя
-    const user = await this.authService.validateUser(payload.email, '');
-    if (!user) {
-      throw new UnauthorizedException('Недействительный токен');
-    }
-
-    // Возвращаем данные пользователя для request.user
+    // Не нужно проверять пользователя по email и паролю
     return { id: payload.sub, email: payload.email, role: payload.role };
   }
 }

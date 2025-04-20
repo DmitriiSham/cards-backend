@@ -1,4 +1,3 @@
-// Файл: src/users/users.controller.ts
 import {
   Controller,
   Get,
@@ -8,45 +7,97 @@ import {
   Body,
   Param,
   NotFoundException,
-} from '@nestjs/common'; // Импортируем декораторы и исключения
-import { UsersService } from './users.service'; // Импортируем сервис
-import { User } from './user.entity'; // Импортируем сущность
+  UsePipes,
+  ValidationPipe,
+  UseGuards,
+} from '@nestjs/common'; // Импорт декораторов NestJS
+import { UsersService } from './users.service'; // Сервис пользователей
+import { User } from './user.entity'; // Сущность User (из TypeORM)
+import { CreateUserDto, UpdateUserDto } from './users.dto'; // DTO для создания и обновления пользователя
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger'; // Swagger-декораторы
+import { AuthGuard } from '@nestjs/passport';
 
-@Controller('users') // Указываем префикс маршрута /users
+// Группируем все эндпоинты под тегом "users" в Swagger
+@ApiTags('users')
+@ApiBearerAuth('jwt-auth')
+@UseGuards(AuthGuard('jwt'))
+@Controller('users') // Префикс маршрутов: /users
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {} // Внедряем сервис
+  constructor(private readonly usersService: UsersService) {} // Внедрение UsersService
 
-  @Get() // Обрабатываем GET-запрос на /users
+  // GET /users — получить всех пользователей
+  @Get()
+  @ApiOperation({ summary: 'Получение списка всех пользователей' })
+  @ApiResponse({
+    status: 200,
+    description: 'Список пользователей',
+    type: [User],
+  })
   findAll(): Promise<User[]> {
-    return this.usersService.findAll(); // Возвращаем всех пользователей
+    return this.usersService.findAll();
   }
 
-  @Get(':id') // Обрабатываем GET-запрос на /users/:id
+  // GET /users/:id — получить пользователя по ID
+  @Get(':id')
+  @ApiOperation({ summary: 'Получение пользователя по ID' })
+  @ApiParam({ name: 'id', description: 'ID пользователя', example: 1 })
+  @ApiResponse({ status: 200, description: 'Пользователь найден', type: User })
+  @ApiResponse({ status: 404, description: 'Пользователь не найден' })
   async findOne(@Param('id') id: number): Promise<User> {
-    const user = await this.usersService.findOne(id); // Получаем пользователя
+    const user = await this.usersService.findOne(id); // Пытаемся найти пользователя
     if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`); // Бросаем 404, если не найден
+      throw new NotFoundException(`User with id ${id} not found`); // Если не найден — кидаем 404
     }
-    return user; // Возвращаем пользователя
+    return user;
   }
 
-  @Post() // Обрабатываем POST-запрос на /users
-  create(
-    @Body() body: { email: string; password: string; role?: string },
-  ): Promise<User> {
-    return this.usersService.create(body.email, body.password, body.role); // Создаем пользователя
+  // POST /users — создать нового пользователя
+  @Post()
+  @UsePipes(new ValidationPipe()) // Включаем валидацию DTO
+  @ApiOperation({ summary: 'Создание нового пользователя' })
+  @ApiBody({ type: CreateUserDto }) // Описание тела запроса
+  @ApiResponse({ status: 201, description: 'Пользователь создан', type: User })
+  create(@Body() createUserDto: CreateUserDto): Promise<User> {
+    // Вызываем метод сервиса, передавая email, пароль и опциональную роль
+    return this.usersService.create(
+      createUserDto.email,
+      createUserDto.password,
+      createUserDto.role,
+    );
   }
 
-  @Put(':id') // Обрабатываем PUT-запрос на /users/:id
+  // PUT /users/:id — обновление пользователя
+  @Put(':id')
+  @UsePipes(new ValidationPipe()) // Валидация для update DTO
+  @ApiOperation({ summary: 'Обновление пользователя' })
+  @ApiParam({ name: 'id', description: 'ID пользователя', example: 1 })
+  @ApiBody({ type: UpdateUserDto }) // Описание тела запроса
+  @ApiResponse({
+    status: 200,
+    description: 'Пользователь обновлён',
+    type: User,
+  })
   update(
     @Param('id') id: number,
-    @Body() updateData: Partial<User>,
+    @Body() updateData: UpdateUserDto, // Частичное обновление
   ): Promise<User> {
-    return this.usersService.update(id, updateData); // Обновляем пользователя
+    return this.usersService.update(id, updateData);
   }
 
-  @Delete(':id') // Обрабатываем DELETE-запрос на /users/:id
+  // DELETE /users/:id — удалить пользователя
+  @Delete(':id')
+  @ApiOperation({ summary: 'Удаление пользователя' })
+  @ApiParam({ name: 'id', description: 'ID пользователя', example: 1 })
+  @ApiResponse({ status: 204, description: 'Пользователь удалён' })
+  @ApiResponse({ status: 404, description: 'Пользователь не найден' })
   remove(@Param('id') id: number): Promise<void> {
-    return this.usersService.remove(id); // Удаляем пользователя
+    return this.usersService.remove(id);
   }
 }

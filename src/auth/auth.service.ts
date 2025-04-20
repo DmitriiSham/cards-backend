@@ -31,12 +31,17 @@ export class AuthService {
     };
   }
 
-  async register(email: string, password: string): Promise<User> {
+  async register(
+    email: string,
+    password: string,
+    role?: string,
+  ): Promise<User> {
     // Метод для регистрации
     const hashedPassword = await bcrypt.hash(password, 10); // Хешируем пароль
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
+      role,
     }); // Создаем пользователя
     return this.userRepository.save(user); // Сохраняем в БД
   }
