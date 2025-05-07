@@ -27,9 +27,10 @@ import { SeedModule } from './seed/seed.module';
         username: configService.get<string>('DATABASE_USER', 'postgres'), // Получаем имя пользователя
         password: configService.get<string>('DATABASE_PASSWORD', 'password'), // Получаем пароль
         database: configService.get<string>('DATABASE_NAME', 'shop_db'), // Получаем имя БД
-        ssl: configService.get<boolean>('DATABASE_SSL')
-          ? { rejectUnauthorized: false }
-          : false, // Подключение по SSL
+        ssl:
+          configService.get<string>('DATABASE_SSL') === 'true'
+            ? { rejectUnauthorized: false }
+            : false,
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // Путь к сущностям
         synchronize: true, // Автоматически создаем таблицы (ТОЛЬКО ДЛЯ РАЗРАБОТКИ)
       }),
