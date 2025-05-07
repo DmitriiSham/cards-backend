@@ -28,6 +28,11 @@ async function bootstrap() {
       'jwt-auth', // это название схемы, нужно будет использовать ниже
     )
     .build();
+
+  app.enableCors({
+    origin: 'http://localhost:5173', // адрес фронтенда
+    credentials: true, // если ты используешь куки или авторизацию
+  });
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document); // Доступ по /api
 

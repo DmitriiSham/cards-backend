@@ -9,7 +9,7 @@ import {
   UsePipes,
   ValidationPipe,
   NotFoundException,
-  UseGuards,
+  // UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { Product } from './product.entity';
@@ -20,14 +20,14 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
-  ApiBearerAuth,
+  // ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+// import { AuthGuard } from '@nestjs/passport';
 
 // Группируем эндпоинты под тегом "products"
 @ApiTags('products')
-@ApiBearerAuth('jwt-auth')
-@UseGuards(AuthGuard('jwt'))
+// @ApiBearerAuth('jwt-auth')
+// @UseGuards(AuthGuard('jwt'))
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
